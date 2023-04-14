@@ -26,7 +26,7 @@ where continent is  null
 group by location
 order by DeathCount desc
 
-
+---------------------------------------------------------------------------------------------------
 
 --joining the two tables
 select *
@@ -35,6 +35,7 @@ join covid_vaccination$ vaccination on
 death.location=vaccination.location and death.date=vaccination.date
 
 --visualising the vaccinations over each day
+--exp1
 select dea.continent,dea.location,dea.date,dea.population,vac.new_vaccinations
 from covid_death$ dea
 join covid_vaccination$ vac on
@@ -42,7 +43,7 @@ dea.location=vac.location and dea.date=vac.date
 where dea.continent is not null
 order by 2,3
 
-
+--exp2
 select dea.continent,dea.location,dea.date,dea.population,vac.new_vaccinations,
 sum(cast(vac.new_vaccinations as bigint))over(partition by dea.location)
 from covid_death$ dea
@@ -51,9 +52,7 @@ dea.location=vac.location and dea.date=vac.date
 where dea.continent is not null
 order by 2,3
 
-
-
---partion the table after ordering by location and date.
+--exp3
 select dea.continent,dea.location,dea.date,dea.population,vac.new_vaccinations
 ,sum(cast(vac.new_vaccinations as bigint))over(partition by dea.location order by dea.location,dea.date) as total_vaccination
 from covid_death$ dea
@@ -64,7 +63,9 @@ order by 2,3
 
 
 
---you cant use the column u creted so we are creating a cte 
+---------------------------------------------------------------------------------------------------------------------------
+
+--CTE
 with table1(continent,location,date,population,new_vaccinations,total_vaccination)
 as(select dea.continent,dea.location,dea.date,dea.population,vac.new_vaccinations
 ,sum(cast(vac.new_vaccinations as bigint))over(partition by dea.location order by dea.location,dea.date) as total_vaccination
@@ -75,9 +76,36 @@ where dea.continent is not null
 )
 select *,(total_vaccination/population)*100 as percentage
 from table1
+ 
+ 
+ 
+ 
+ 
+ --TEMP TABLE2
+create table table2(
+Continent nvarchar(255),
+Location nvarchar(255),
+Date datetime,
+Population numeric,
+New_vaccination numeric,
+total_vaccination numeric
+)
+Insert into table2
+select dea.continent,dea.location,dea.date,dea.population,vac.new_vaccinations
+,sum(cast(vac.new_vaccinations as bigint))over(partition by dea.location order by dea.location,dea.date) as total_vaccination
+from covid_death$ dea
+join covid_vaccination$ vac on
+dea.location=vac.location and dea.date=vac.date
+where dea.continent is not null;
+select *,(total_vaccination/population)*100 as percentage
+from table2
 
 
----creating a view for later purpose
+
+
+
+
+---VIEW1
 create view view1 as
 select dea.continent,dea.location,dea.date,dea.population,vac.new_vaccinations
 ,sum(cast(vac.new_vaccinations as bigint))over(partition by dea.location order by dea.location,dea.date) as total_vaccination
